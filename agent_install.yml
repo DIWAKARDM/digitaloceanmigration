@@ -1,0 +1,49 @@
+---
+
+- hosts: all
+
+  gather_facts: yes
+  become: yes
+  vars:
+    packages:
+    - wget
+    - gcc
+    - make
+    - perl
+    - tar
+    - gawk
+    - rpm
+
+  vars_prompt:
+    - name: access_key_id
+      prompt: Enter access_key_id ?
+
+    - name: secret_access_key
+      prompt: Enter the secret_access_key ?
+
+    - name: aws_region
+      prompt: Enter the AWS --region ?
+      private: false
+
+  tasks:
+    - name: Update yum package
+      yum:
+        name: "*"
+        state: latest
+        update_cache: yes
+      when: ansible_os_family == "RedHat" or ansible_os_family == "CentOS"
+
+    - name: Installing required Packages for Redhat or CentOS
+      yum:
+       name: "{{ packages }}"
+       state: latest
+       update_cache: yes
+      when: ansible_os_family == "RedHat" or ansible_os_family == "CentOS"
+
+    - name: Downloading Script for Agent Installation
+      command:
+        /usr/bin/wget -O ./aws-replication-installer-init.py https://aws-application-migration-service-ap-south-1.s3.ap-south-1.amazonaws.com/latest/linux/aws-replication-installer-init.py
+
+    - name: Installing Agent to the source server
+      command:
+        /usr/bin/python aws-replication-installer-init.py --region ap-south-1 --aws-access-key-id {{ access_key_id }} --aws-secret-access-key {{ secret_access_key }} --no-prompt
